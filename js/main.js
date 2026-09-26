@@ -173,6 +173,7 @@
     document.getElementById('banner-continue-hint').hidden = true;
 
     document.getElementById('setup-panel').hidden = true;
+    document.getElementById('intro-panel').hidden = true;
     document.getElementById('restart-btn').hidden = false;
     document.getElementById('game-area').hidden = false;
     document.getElementById('timeline-bar').hidden = false;
@@ -257,6 +258,9 @@
 
   function updatePauseOnPlayerBattleUI() {
     if (!state) return;
+    const isAuto = state.mode === 'auto'; // 自動モードには自勢力が無いので項目ごと出さない
+    document.getElementById('pause-on-player-battle-row').hidden = isAuto;
+    document.getElementById('pause-on-player-battle-note').hidden = isAuto;
     const btn = document.getElementById('pause-on-player-battle-btn');
     btn.textContent = state.pauseOnPlayerBattle ? 'ON' : 'OFF';
     btn.classList.toggle('active', state.pauseOnPlayerBattle);

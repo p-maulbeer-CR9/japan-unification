@@ -88,6 +88,24 @@ select {
   font-size: 0.9rem;
 }
 
+/* ゲーム開始前の説明文。ヘッダー下の空いている場所に表示する */
+.intro-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 16px;
+}
+.intro-list {
+  max-width: 820px; /* PCでは各項目が1行に収まる幅（スマホでは画面幅に合わせて折り返す） */
+  margin: 0 auto;
+  padding-left: 1.4em;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--text);
+}
+.intro-list li + li { margin-top: 8px; }
+.intro-list li::marker { color: var(--accent); }
+
 #game-area {
   flex: 1;
   display: flex;

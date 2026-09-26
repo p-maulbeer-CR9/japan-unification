@@ -1,3 +1,5 @@
 # 戦闘メッセージの下書き（公開しない。取り込み後の js/quips*.js だけ公開する）
 quips-input.txt
 quips-kunigae-input.txt
+# 開発用ツール（公開しない）
+tools/

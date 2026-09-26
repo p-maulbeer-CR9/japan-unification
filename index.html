@@ -35,6 +35,15 @@
   <button id="restart-btn" hidden>最初からやり直す</button>
 </header>
 
+<!-- ゲーム開始前だけ表示する簡単な説明（開始すると main.js で隠す） -->
+<section id="intro-panel" class="intro-panel">
+  <ul class="intro-list">
+    <li>隣接する都道府県を制圧していき、日本一統を成し遂げましょう！</li>
+    <li>各都道府県の攻撃力・守備力・素早さは、ゲーム開始時に1～10の間でランダムに振られます</li>
+    <li>隠し要素もいくつかあるので、プレイしてみつけてね！</li>
+  </ul>
+</section>
+
 <main id="game-area" hidden>
   <section id="map-section">
     <div id="map-toolbar">
@@ -119,12 +128,12 @@
       <span>戦闘メッセージ</span>
       <button id="battle-quip-btn" class="active">ON</button>
     </div>
-    <div class="settings-row">
+    <!-- 自勢力の戦闘結果で一時停止・操作設定は手動モードのときだけ表示する（自動モードには自勢力・操作する県が無いため。main.jsで切替） -->
+    <div id="pause-on-player-battle-row" class="settings-row">
       <span>自勢力の戦闘結果で一時停止</span>
       <button id="pause-on-player-battle-btn" class="active">ON</button>
     </div>
-    <div class="settings-note">OFFにすると、自分の勢力が絡む勝敗バナーが出ても止まらずそのまま進みます（自動A/Bでの観察向け）。</div>
-    <!-- 操作設定は手動モードのときだけ表示する（自動モードは操作する県が無いため。main.jsで切替） -->
+    <div id="pause-on-player-battle-note" class="settings-note">OFFにすると、自分の勢力が絡む勝敗バナーが出ても止まらずそのまま進みます（自動A/Bでの観察向け）。</div>
     <div id="operation-mode-row" class="settings-row">
       <span>操作設定</span>
       <div id="operation-mode-controls" class="settings-segmented">
