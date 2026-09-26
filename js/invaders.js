@@ -330,12 +330,13 @@ function maybeTriggerIslandIndependence(state) {
     }
     // 独立するのは島の「土地」。お国替えで別の中身（例：長崎）が住んでいれば、その名前で独立する
     const islandName = state.prefs[isl.id].name;
-    // バナー下：1行目は決まり文句（「！」まで）、2行目は独立元の県と、その時点の主国を添える
+    // バナー下：1行目は決まり文句（「！」まで。対馬は今いる県の名前入り＝islandLead）、2行目は独立元の県と、その時点の主国を添える
+    const lead = islandLead(isl, islandName, state.prefs[isl.id].originId);
     const secondLine = `${islandName}が${parentName}（主国:${parentSovereignName}）から独立した`;
-    pushLog(state, `🏝️ ${isl.lead}${secondLine}`);
+    pushLog(state, `🏝️ ${lead}${secondLine}`);
 
     const pause = shouldPauseOnInvasion(state);
-    state.worldEvent = { headline: `${islandName}が${parentName}から独立！！`, notes: [isl.lead, secondLine], time: state.simTime, paused: pause };
+    state.worldEvent = { headline: `${islandName}が${parentName}から独立！！`, notes: [lead, secondLine], time: state.simTime, paused: pause };
     if (pause) state.running = false;
   });
 }
