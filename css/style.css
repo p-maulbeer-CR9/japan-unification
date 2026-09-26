@@ -1,0 +1,930 @@
+:root {
+  --bg: #14161c;
+  --panel-bg: #1e2129;
+  --panel-bg-alt: #262a35;
+  --border: #3a3f4d;
+  --text: #eef0f4;
+  --text-dim: #9aa1b0;
+  --accent: #e2b23a;
+  --danger: #d95c5c;
+  --win: #59c977;
+  --kunigae-left: #e0824a;
+  --kunigae-right: #4a9de0;
+}
+
+* { box-sizing: border-box; }
+
+/* .modal-overlay 等の display 指定より hidden 属性を必ず優先させる */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  /* iOS Safariでアドレスバー分だけ画面が縦に伸び、下部のボタンが押せなくなるのを防ぐ */
+  height: 100dvh;
+  overflow: hidden;
+  -webkit-text-size-adjust: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+  background: var(--panel-bg-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+/* :hover はマウス端末だけに適用する。iOS Safariは、タップ直後に画面が変化するとホバー扱いにしてクリックを発火しないため */
+@media (hover: hover) { button:hover { border-color: var(--accent); } }
+button.active { background: var(--accent); color: #1a1a1a; font-weight: bold; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+select {
+  font-family: inherit;
+  background: var(--panel-bg-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+#top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+#top-bar h1 {
+  font-size: 1.3rem;
+  margin: 0;
+}
+.subtitle {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-weight: normal;
+}
+
+.setup-panel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+}
+
+#game-area {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+#map-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+#map-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border);
+}
+#faction-count-display {
+  margin-left: auto;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+#map-viewport {
+  flex: 1;
+  overflow: hidden;
+  background: #0c2340;
+  position: relative;
+}
+
+#map-svg {
+  touch-action: none; /* 地図上のドラッグ・ピンチをページのスクロールやズームに奪わせない */
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+#map-svg.dragging { cursor: grabbing; }
+
+.pref-node .fill-half {
+  stroke: none;
+}
+.pref-node .outline {
+  fill: none;
+  pointer-events: none;
+  stroke: #0a0a0a;
+  stroke-width: 2;
+}
+@media (hover: hover) { .pref-node:hover .outline {
+  stroke: #ffffff;
+  stroke-width: 3;
+} }
+.pref-node.selected .outline {
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+/* お国替えの候補選択中だけ、左の候補をオレンジ・右の候補を青の丸で囲む（選択画面の左右の色と対応） */
+.pref-node .kunigae-ring {
+  display: none;
+  fill: none;
+  pointer-events: none;
+  stroke-width: 4;
+}
+.pref-node.kunigae-left .kunigae-ring { display: inline; stroke: var(--kunigae-left); }
+.pref-node.kunigae-right .kunigae-ring { display: inline; stroke: var(--kunigae-right); }
+.pref-node text {
+  fill: #ffffff;
+  font-size: 16px;
+  text-anchor: middle;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: #000000;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.pref-node .badge {
+  font-size: 14px;
+  fill: var(--accent);
+  font-weight: bold;
+}
+
+.adj-line {
+  stroke: rgba(255,255,255,0.12);
+  stroke-width: 1.5;
+}
+.adj-line.sea {
+  stroke: rgba(120, 190, 255, 0.35);
+  stroke-dasharray: 6 5;
+}
+
+#side-panel {
+  width: 320px;
+  flex-shrink: 0;
+  background: var(--panel-bg);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+.tab-btn {
+  flex: 1;
+  border: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font-size: 0.8rem;
+}
+.tab-btn.active {
+  background: transparent;
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+}
+
+.tab-content {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  font-size: 0.9rem;
+}
+.tab-content.active { display: block; }
+
+.hint { color: var(--text-dim); }
+
+.info-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+.info-sub {
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+.status-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--panel-bg-alt);
+  font-size: 0.78rem;
+  margin: 2px 4px 2px 0;
+}
+.status-tag.warn { color: var(--danger); border: 1px solid var(--danger); }
+.status-tag.buff { color: var(--win); border: 1px solid var(--win); }
+
+.vassal-list, .member-list {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0;
+}
+.vassal-list li, .member-list li {
+  padding: 3px 0;
+  cursor: pointer;
+}
+@media (hover: hover) { .vassal-list li:hover, .member-list li:hover { color: var(--accent); } }
+
+#faction-graph-header { margin-bottom: 10px; }
+#faction-graph-toggle-btn.active { background: var(--accent); color: #1a1a1a; font-weight: bold; }
+
+#faction-graph-container {
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.faction-graph-svg {
+  width: 100%;
+  max-width: 220px;
+  display: block;
+  margin: 0 auto 10px;
+}
+.graph-center-count {
+  font-size: 34px;
+  fill: var(--text);
+  font-weight: bold;
+}
+.graph-center-label {
+  font-size: 13px;
+  fill: var(--text-dim);
+}
+.graph-legend {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.82rem;
+}
+.graph-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  cursor: pointer;
+}
+@media (hover: hover) { .graph-legend li:hover { color: var(--accent); } }
+.graph-legend .swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.graph-legend-rest {
+  color: var(--text-dim);
+  cursor: default !important;
+}
+@media (hover: hover) { .graph-legend-rest:hover { color: var(--text-dim) !important; } }
+
+/* 離島が出現している間だけ、都道府県グラフと離島グラフを2カラムで小さめに並べる */
+#faction-graph-container.faction-graph-columns {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.faction-graph-columns .faction-graph-col {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.faction-graph-columns .faction-graph-col-title {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 2px;
+}
+.faction-graph-columns .faction-graph-svg {
+  max-width: 120px;
+  margin-bottom: 4px;
+}
+.faction-graph-columns .graph-center-count { font-size: 24px; }
+.faction-graph-columns .graph-center-label { font-size: 9px; }
+.faction-graph-columns .graph-legend { font-size: 0.66rem; }
+.faction-graph-columns .graph-legend li { padding: 1px 0; gap: 4px; }
+.faction-graph-columns .graph-legend .swatch { width: 8px; height: 8px; }
+
+#log-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.82rem;
+}
+#log-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+}
+#log-list li:first-child { color: var(--text); }
+
+#timeline-bar {
+  background: var(--panel-bg);
+  border-top: 1px solid var(--border);
+  padding: 10px 16px;
+}
+
+#playback-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+#speed-controls {
+  display: flex;
+  gap: 4px;
+}
+#speed-controls button { padding: 4px 8px; font-size: 0.8rem; }
+
+#sim-time-display {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin-left: auto;
+}
+
+#timeline-track {
+  position: relative;
+  height: 54px;
+  background: var(--panel-bg-alt);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  overflow-x: auto;
+}
+
+.timeline-item {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  min-width: 54px;
+}
+.timeline-item .dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #0a0a0a;
+  margin-bottom: 3px;
+}
+.timeline-item.next { color: var(--accent); font-weight: bold; }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+.modal-box {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  min-width: 320px;
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.modal-box h2 { margin-top: 0; }
+/* 徳川家を操作するかの選択画面（東京で始めて江戸幕府が開かれたとき）。問いかけが長いので見出しを小さめにする */
+#tokugawa-choice-modal h2 { font-size: 1.05rem; line-height: 1.5; }
+#tokugawa-choice-modal .decision-option { margin-top: 8px; }
+
+.modal-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.modal-header-row h2 { margin: 0; }
+.icon-btn {
+  padding: 4px 10px;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+#decision-reopen-btn {
+  position: fixed;
+  left: 50%;
+  bottom: 90px;
+  transform: translateX(-50%);
+  z-index: 40;
+  background: var(--accent);
+  color: #1a1a1a;
+  font-weight: bold;
+  padding: 10px 20px;
+  border-radius: 24px;
+  border: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  animation: pulse-reopen 1.6s ease-in-out infinite;
+}
+@keyframes pulse-reopen {
+  0%, 100% { box-shadow: 0 4px 16px rgba(226,178,58,0.25); }
+  50% { box-shadow: 0 4px 22px rgba(226,178,58,0.75); }
+}
+
+#decision-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+.decision-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-bg-alt);
+  cursor: pointer;
+}
+@media (hover: hover) { .decision-option:hover { border-color: var(--accent); } }
+.decision-option-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.decision-option .odds { color: var(--text-dim); font-size: 0.8rem; }
+.decision-option .desperation-hint { color: var(--danger); font-weight: bold; font-size: 0.8rem; }
+.decision-option .kunigae-note { color: var(--accent); font-weight: bold; font-size: 0.78rem; }
+
+/* お国替え（kunigae.js）の候補選択画面。行動選択モーダルの中で#decision-optionsと入れ替わりで表示する */
+/* 説明文と「選んだ場所の能力値」を同じマスに重ねる。高さは高い方に合わせて伸びるので、能力値が折り返してもはみ出さない */
+#kunigae-intro-area {
+  display: grid;
+  margin: 14px 0 10px;
+}
+#kunigae-intro-text, #kunigae-picked { grid-area: 1 / 1; }
+#kunigae-intro {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+  margin: 0 0 4px;
+}
+#kunigae-detail-note {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+  margin: 0;
+}
+#kunigae-picked {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  background: var(--panel-bg); /* 下の説明文を隠す */
+}
+.kunigae-picked-row {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+}
+.kunigae-picked-row .kunigae-picked-name { font-weight: bold; margin-right: 8px; }
+.kunigae-picked-left { border-color: var(--kunigae-left); background: rgba(224, 130, 74, 0.1); }
+.kunigae-picked-right { border-color: var(--kunigae-right); background: rgba(74, 157, 224, 0.1); }
+.kunigae-columns {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+.kunigae-col-wrap {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.kunigae-col-label {
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+.kunigae-col-wrap-left .kunigae-col-label { color: var(--kunigae-left); }
+.kunigae-col-wrap-right .kunigae-col-label { color: var(--kunigae-right); }
+.kunigae-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  color: var(--text-dim);
+  padding: 0 2px;
+}
+.kunigae-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+}
+.kunigae-col-left { border-color: var(--kunigae-left); background: rgba(224, 130, 74, 0.1); }
+.kunigae-col-right { border-color: var(--kunigae-right); background: rgba(74, 157, 224, 0.1); }
+.kunigae-col button {
+  width: 100%;
+  text-align: center;
+}
+.kunigae-col-left button.active { background: var(--kunigae-left); color: #10131a; font-weight: bold; }
+.kunigae-col-right button.active { background: var(--kunigae-right); color: #10131a; font-weight: bold; }
+.kunigae-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* 戦闘結果は地図を隠さないよう、サイドパネルの右下（フッターの「〇〇日目」表示のすぐ上）に
+   小さなトースト通知として表示する。上寄せだとパネル本文（県情報など）に重なって読めなくなるため、
+   下端をパネル下端＝フッター直上に揃える。#side-panel の position:relative を基準に
+   position:absolute で配置するため、画面幅に関わらずパネルの位置に追従する。 */
+.battle-toast {
+  position: absolute;
+  bottom: 8px;
+  right: 4px;
+  z-index: 30;
+  pointer-events: none;
+  max-width: calc(100% - 8px);
+  animation: battle-toast-in 0.2s ease-out;
+}
+@keyframes battle-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.battle-box {
+  background: rgba(30, 33, 41, 0.85);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 8px 12px;
+  text-align: center;
+  width: 190px;
+  max-width: 100%;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+}
+.battle-desperation {
+  font-size: 0.72rem;
+  font-weight: bold;
+  color: var(--danger);
+  margin-bottom: 4px;
+}
+.battle-pref-name { font-size: 0.8rem; font-weight: bold; }
+.battle-stat { color: var(--text-dim); margin-top: 0; font-size: 0.7rem; }
+.battle-vs { font-size: 0.8rem; margin: 4px 0; color: var(--accent); }
+.battle-result { margin-top: 4px; font-size: 0.76rem; font-weight: bold; }
+
+.clear-box { text-align: center; position: relative; }
+
+/* 真クリア（15代目の江戸幕府を全滅させた状態での日本一統）演出：背景を金色に、花吹雪を舞わせる */
+.clear-box.true-ending {
+  background: linear-gradient(160deg, #4a3a10 0%, #8a6a1e 45%, #e6c65c 100%);
+  border-color: #ffe9a8;
+  box-shadow: 0 0 40px rgba(255, 220, 130, 0.35);
+}
+.clear-box.true-ending h2,
+.clear-box.true-ending p { color: #fff6d9; text-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+/* バッドエンド（オソロシア・宇宙人・メリケン・徳川家による一統）：濃く暗い紫で、どよーんと霧がうごめく */
+.clear-box.bad-ending {
+  background: linear-gradient(170deg, #1c0a2a 0%, #2b0f3f 50%, #14061e 100%);
+  border-color: #4b2466;
+  box-shadow: 0 0 50px rgba(60, 10, 90, 0.7), inset 0 0 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+.clear-box.bad-ending::before {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background:
+    radial-gradient(circle at 30% 40%, rgba(120, 60, 160, 0.25), transparent 45%),
+    radial-gradient(circle at 70% 65%, rgba(80, 30, 120, 0.3), transparent 50%);
+  animation: bad-fog 9s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.clear-box.bad-ending > *:not(.petals) { position: relative; }
+.clear-box.bad-ending h2 {
+  color: #b99ad0;
+  animation: bad-sway 4s ease-in-out infinite;
+}
+.clear-box.bad-ending p { color: #a893b8; }
+@keyframes bad-fog {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(8%, -6%) scale(1.15); }
+}
+@keyframes bad-sway {
+  0%, 100% { transform: translateY(0) skewX(0deg); opacity: 0.85; }
+  50% { transform: translateY(3px) skewX(-3deg); opacity: 0.6; }
+}
+.clear-true-badge {
+  margin-top: 10px;
+  font-weight: bold;
+  color: #fff6d9;
+}
+.petals {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: inherit;
+}
+.petal {
+  position: absolute;
+  top: -10%;
+  animation-name: petal-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes petal-fall {
+  0% { transform: translateY(-10%) translateX(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(420px) translateX(18px) rotate(300deg); opacity: 0; }
+}
+
+/* オソロシア・宇宙人などの侵略イベント発生を、誰の勢力であっても大きく前面に知らせる */
+.world-event-wrap {
+  position: fixed;
+  top: 9%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 46;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: calc(100vw - 32px);
+}
+.world-event-banner {
+  pointer-events: none;
+  text-align: center;
+  max-width: calc(100vw - 32px);
+  font-size: 1.8rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  color: #ffdc6b;
+  background: rgba(20, 4, 4, 0.88);
+  border: 2px solid #ffdc6b;
+  padding: 12px 26px;
+  border-radius: 16px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.7);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.6);
+  animation: world-event-pop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+@keyframes world-event-pop {
+  0% { opacity: 0; transform: scale(0.7); }
+  60% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+/* 返り咲きバナーの下に添える戦闘結果。見た目は勝敗バナー下の白文字バナー（.player-battle-note）と同じで、複数の文は改行して並べる */
+/* 見出しの上に出す戦闘メッセージ（黒船の「開国シテクダサーイ！」・グンマー化の「おや！？…」）。白文字バナーと同じ見た目 */
+.player-battle-note.world-event-quip {
+  margin-top: 0;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.player-battle-note.world-event-note {
+  margin-top: 8px;
+  text-align: center;
+  white-space: pre; /* 改行は文中の指定位置だけ。iPhoneなど狭い画面でも途中で折り返さない（文字は下のmediaで縮めて収める） */
+}
+
+/* プレイヤーの勢力が絡む戦闘だけは、地図の邪魔にならない範囲で大きく前面に表示する */
+.player-battle-banner {
+  position: fixed;
+  top: 22%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 45;
+  pointer-events: none;
+  text-align: center;
+  max-width: calc(100vw - 32px);
+  animation: player-banner-pop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+@keyframes player-banner-pop {
+  from { opacity: 0; transform: translateX(-50%) scale(0.85); }
+  to { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+.player-battle-desperation {
+  display: inline-block;
+  color: var(--danger);
+  font-size: 1.3rem;
+  font-weight: bold;
+  background: rgba(20, 22, 28, 0.85);
+  padding: 4px 18px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+.player-battle-headline {
+  font-size: 1.05rem;
+  line-height: 1.4;
+  font-weight: bold;
+  color: var(--text);
+  background: rgba(20, 22, 28, 0.9);
+  padding: 10px 18px;
+  border-radius: 14px;
+  white-space: nowrap;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+}
+.player-battle-headline.win { color: var(--win); border: 2px solid var(--win); }
+.player-battle-headline.lose { color: var(--danger); border: 2px solid var(--danger); }
+.player-battle-headline.draw { color: var(--text-dim); border: 2px solid var(--border); }
+
+/* 属国化／新主国独立の結果を、勝敗バナーの下にもう1つの1行バナーとして添える。
+   勝敗バナーそのものより一回り小さいサイズだが、視認性は同程度に保つ（白文字・くっきりした背景）。 */
+.player-battle-note {
+  margin-top: 6px;
+  display: inline-block;
+  font-size: 0.88rem;
+  font-weight: bold;
+  color: var(--text);
+  background: rgba(20, 22, 28, 0.9);
+  padding: 6px 16px;
+  border-radius: 12px;
+  white-space: nowrap;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+
+@media (max-width: 480px) {
+  .player-battle-headline { font-size: 0.78rem; padding: 8px 12px; }
+  .world-event-banner { font-size: 1.05rem; padding: 8px 16px; }
+  .player-battle-note { font-size: 0.7rem; padding: 4px 12px; white-space: normal; }
+}
+
+/* 戦闘・世界イベントバナー表示中、タップで続行できることを示す共通ヒント */
+.banner-continue-hint {
+  position: fixed;
+  top: 62%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 47;
+  pointer-events: none;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  background: rgba(20, 22, 28, 0.85);
+  padding: 4px 14px;
+  border-radius: 12px;
+  white-space: nowrap; /* iPhoneなど狭い画面でも「続行」だけ折り返さないよう1行に固定 */
+  animation: hint-pulse 1.4s ease-in-out infinite;
+}
+@keyframes hint-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@media (max-width: 860px) {
+  /* vh固定値同士（40vh + 40vh）が実際に使える高さを超えてタイムラインと重なっていたため、
+     game-areaの実高さに対する比率（flex）で分け合う形に変更する。
+     パネルの文字を小さくして密度を上げた分、地図側の比率をさらに広げてある。 */
+  #game-area { flex-direction: column; min-height: 0; }
+  #map-section { flex: 2 1 0; min-height: 0; }
+  #side-panel { width: 100%; flex: 1 1 0; min-height: 0; border-left: none; border-top: 1px solid var(--border); }
+  #map-viewport { min-height: 0; }
+
+  /* サイドパネルの文字・余白はタブ名（県情報など）と同程度のサイズまで縮め、情報密度を上げる */
+  .tabs { min-height: 0; }
+  .tab-btn { padding: 6px 4px; font-size: 0.78rem; }
+  .tab-content { font-size: 0.78rem; padding: 6px 8px; }
+  .info-title { font-size: 0.82rem; margin-bottom: 2px; }
+  .info-sub { font-size: 0.72rem; margin-bottom: 4px; }
+  .stat-row { font-size: 0.74rem; padding: 2px 0; }
+  .status-tag { font-size: 0.64rem; padding: 1px 5px; margin: 1px 3px 1px 0; }
+  .vassal-list li, .member-list li { font-size: 0.74rem; padding: 2px 0; }
+  #log-list { font-size: 0.68rem; }
+  #log-list li { padding: 3px 0; }
+  #faction-graph-container { margin-bottom: 8px; padding-bottom: 8px; }
+  .faction-graph-svg { max-width: 150px; margin-bottom: 6px; }
+  .graph-legend { font-size: 0.68rem; }
+  .graph-legend li { padding: 2px 0; }
+  .decision-option { padding: 6px 8px; }
+  .decision-option .odds, .decision-option .desperation-hint, .decision-option .kunigae-note { font-size: 0.68rem; }
+}
+
+/* 設定パネル（⚙）。タイムラインバーの上に浮かせて表示し、地図やパネルの場所を取らない */
+#timeline-bar { position: relative; }
+#settings-btn { font-size: 1.05rem; }
+.settings-panel {
+  position: absolute;
+  right: 8px;
+  bottom: 100%;
+  /* 世界イベント・戦闘バナー（z-index 45〜47）より前面に出す。バナーはタップで再生しないと消せないが、
+     設定パネルは✕や⚙でいつでも自分で閉じられるので、開いている間はバナーより優先して見えてよい */
+  z-index: 48;
+  width: min(320px, calc(100vw - 16px));
+  padding: 10px 12px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.45);
+}
+.settings-header, .settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.settings-header { margin-bottom: 8px; }
+.settings-row { padding: 6px 0; border-top: 1px solid var(--border); font-size: 0.9rem; }
+.settings-note { color: var(--text-dim); font-size: 0.75rem; line-height: 1.4; }
+.settings-row button { min-width: 52px; }
+/* 操作設定（手動／自動A／自動B）は排他選択なので、ON/OFF表記ではなく速度切替と同じ「横並び・選択中だけ強調」の見た目にする */
+.settings-segmented { display: flex; gap: 4px; flex-shrink: 0; }
+.settings-segmented button { min-width: 0; padding: 4px 8px; font-size: 0.78rem; }
+
+/* 再生バーは常に1行に収める（折り返して二段にならないよう、余白と文字を詰めてある） */
+#timeline-bar { padding: 6px 8px; }
+#playback-controls {
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+#playback-controls button { padding: 4px 8px; font-size: 0.8rem; white-space: nowrap; }
+#speed-controls { gap: 3px; flex-shrink: 0; }
+#speed-controls button { padding: 4px 6px; }
+#sim-time-display { white-space: nowrap; font-size: 0.78rem; flex-shrink: 0; }
+
+/* 歯車は枠・背景なしのアイコンだけにする（丸ボタン用の楕円の枠が出ないように） */
+#playback-controls #settings-btn {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 2px 4px;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+#settings-close-btn {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 2px 6px;
+  line-height: 1;
+}
+
+/* 戦闘メッセージ：勝敗バナーの直上に出す、県同士のやり取りのひとこと */
+.player-battle-quip {
+  display: inline-block;
+  max-width: 100%;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  line-height: 1.4;
+  color: var(--accent);
+  background: rgba(20, 22, 28, 0.9);
+  border: 1px solid var(--accent);
+  padding: 6px 16px;
+  border-radius: 12px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+@media (max-width: 480px) {
+  .player-battle-quip { font-size: 0.74rem; padding: 5px 12px; }
+}
+
+/* 行動選択画面の✕も、枠・背景なしのアイコンだけにする（楕円の枠が出ないように） */
+#decision-close-btn {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 2px 6px;
+  line-height: 1;
+}
